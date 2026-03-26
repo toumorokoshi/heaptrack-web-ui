@@ -1,5 +1,8 @@
 # Justfile for heaptrack-web-ui
 
+dev:
+    npm run dev
+
 lint:
     npm run lint
     npx prettier --check .

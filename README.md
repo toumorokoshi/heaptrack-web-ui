@@ -39,6 +39,18 @@ The application is built as a pure client-side web application using React.
 just install # or npm install
 ```
 
+### Development
+
+```bash
+just dev      # or npm run dev
+```
+
+### Build
+
+```bash
+just build    # or npm run build
+```
+
 ### Linting & Testing
 
 ```bash

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useLayoutEffect } from "react";
 import * as d3 from "d3";
 import type { TimelinePoint } from "../utils/parser";
 import "./MemoryTimelineChart.css";
@@ -10,6 +10,7 @@ interface Props {
 export const MemoryTimelineChart = ({ data }: Props) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(900);
 
   const margin = { top: 20, right: 30, bottom: 40, left: 70 };
 
@@ -25,6 +26,18 @@ export const MemoryTimelineChart = ({ data }: Props) => {
     if (ms < 1000) return `${ms}ms`;
     return `${(ms / 1000).toFixed(1)}s`;
   };
+
+  useLayoutEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
 
   useEffect(() => {
     if (!svgRef.current || !containerRef.current || data.length === 0) return;
@@ -151,20 +164,15 @@ export const MemoryTimelineChart = ({ data }: Props) => {
 
         focus.attr("transform", `translate(${x(d.timestamp)},${y(d.heapUsage)})`);
         tooltip
-          .html(`Time: ${formatTime(d.timestamp)}<br/>Usage: ${formatBytes(d.heapUsage)}`)
+          .html(`Usage: ${formatBytes(d.heapUsage)}<br/>Time: ${formatTime(d.timestamp)}`)
           .style("left", `${event.pageX + 10}px`)
           .style("top", `${event.pageY - 28}px`);
       });
 
-    const handleResize = () => {
-      // Trigger re-render by effect
-    };
-    window.addEventListener("resize", handleResize);
     return () => {
-      window.removeEventListener("resize", handleResize);
       tooltip.remove();
     };
-  }, [data, margin.left, margin.right, margin.top, margin.bottom]);
+  }, [data, margin.left, margin.right, margin.top, margin.bottom, containerWidth]);
 
   return (
     <div className="timeline-chart-wrapper" ref={containerRef}>
@@ -172,7 +180,7 @@ export const MemoryTimelineChart = ({ data }: Props) => {
         ref={svgRef}
         width="100%"
         height="300"
-        viewBox={`0 0 ${containerRef.current?.offsetWidth || 900} 300`}
+        viewBox={`0 0 ${containerWidth} 300`}
         preserveAspectRatio="xMinYMin meet"
       />
     </div>

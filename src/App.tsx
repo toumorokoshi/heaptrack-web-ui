@@ -1,120 +1,139 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "./assets/vite.svg";
-import heroImg from "./assets/hero.png";
+import { useState, useCallback, useMemo } from "react";
 import "./App.css";
+import { Dropzone } from "./components/Dropzone";
+import { parseHeaptrack } from "./utils/parser";
+import type { HeaptrackSummary } from "./utils/parser";
 
 function App() {
-  const [count, setCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [profileData, setProfileData] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const summary = useMemo<HeaptrackSummary | null>(() => {
+    if (!profileData) return null;
+    return parseHeaptrack(profileData);
+  }, [profileData]);
+
+  const onFileLoaded = useCallback((file: File) => {
+    setLoading(true);
+    setError(null);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const arrayBuffer = e.target?.result as ArrayBuffer;
+
+      if (file.name.endsWith(".zst")) {
+        const worker = new Worker(
+          new URL("./workers/decompressor.worker.ts", import.meta.url),
+          { type: "module" },
+        );
+
+        worker.onmessage = (event) => {
+          if (event.data.error) {
+            setError(`Decompression failed: ${event.data.error}`);
+            setLoading(false);
+          } else {
+            const decompressedBuffer = event.data as ArrayBuffer;
+            const text = new TextDecoder().decode(decompressedBuffer);
+            setProfileData(text);
+            setLoading(false);
+          }
+          worker.terminate();
+        };
+
+        worker.onerror = (err) => {
+          setError(`Worker error: ${err.message}`);
+          setLoading(false);
+          worker.terminate();
+        };
+
+        worker.postMessage(arrayBuffer, [arrayBuffer]);
+      } else {
+        // Assume plain text if not .zst
+        const text = new TextDecoder().decode(arrayBuffer);
+        setProfileData(text);
+        setLoading(false);
+      }
+    };
+
+    reader.onerror = () => {
+      setError("Failed to read file");
+      setLoading(false);
+    };
+
+    reader.readAsArrayBuffer(file);
+  }, []);
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
+    <div className="app-container">
+      <header>
+        <div className="logo-container">
           <svg className="icon" role="presentation" aria-hidden="true">
             <use href="/icons.svg#documentation-icon"></use>
           </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+          <h1>
+            heaptrack <span>web ui</span>
+          </h1>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      </header>
+
+      <main>
+        {!profileData && !loading && (
+          <section id="upload">
+            <Dropzone onFileLoaded={onFileLoaded} />
+            {error && <div className="error-message">{error}</div>}
+          </section>
+        )}
+
+        {loading && (
+          <section id="loading">
+            <div className="spinner"></div>
+            <p>Decompressing and parsing profile...</p>
+          </section>
+        )}
+
+        {profileData && summary && !loading && (
+          <section id="dashboard">
+            <div className="success-banner">
+              <h2>Profile Loaded Successfully</h2>
+              <p>Command: {summary.command}</p>
+              <button onClick={() => setProfileData(null)}>
+                Load Another File
+              </button>
+            </div>
+
+            <div className="summary-grid">
+              <div className="summary-card">
+                <h3>Version</h3>
+                <div className="value">{summary.version}</div>
+              </div>
+              <div className="summary-card">
+                <h3>Allocations</h3>
+                <div className="value">
+                  {summary.allocations.toLocaleString()}
+                </div>
+              </div>
+              <div className="summary-card">
+                <h3>Frees</h3>
+                <div className="value">{summary.frees.toLocaleString()}</div>
+              </div>
+              <div className="summary-card">
+                <h3>Symbols</h3>
+                <div className="value">{summary.symbols.toLocaleString()}</div>
+              </div>
+            </div>
+
+            <pre className="raw-output">{profileData.slice(0, 1000)}...</pre>
+          </section>
+        )}
+      </main>
 
       <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+
+      <footer>
+        <p>&copy; 2026 Heaptrack Web UI. Pure client-side memory analysis.</p>
+      </footer>
+    </div>
   );
 }
 

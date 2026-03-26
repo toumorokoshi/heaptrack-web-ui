@@ -1,0 +1,94 @@
+:root {
+  --dropzone-bg: rgba(255, 255, 255, 0.05);
+  --dropzone-border: rgba(255, 255, 255, 0.1);
+  --dropzone-hover-bg: rgba(255, 255, 255, 0.1);
+  --dropzone-hover-border: rgba(100, 108, 255, 0.5);
+}
+
+.dropzone {
+  width: 100%;
+  max-width: 600px;
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--dropzone-border);
+  border-radius: 24px;
+  background-color: var(--dropzone-bg);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 2rem auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.dropzone:hover,
+.dropzone.dragging {
+  background-color: var(--dropzone-hover-bg);
+  border-color: var(--dropzone-hover-border);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.dropzone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem;
+  z-index: 1;
+}
+
+.dropzone .icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 1rem;
+  opacity: 0.8;
+  color: #646cff;
+}
+
+.dropzone h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.dropzone p {
+  color: var(--text-color-secondary);
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.7;
+}
+
+.select-file-button {
+  background-color: #646cff;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.select-file-button:hover {
+  background-color: #535bf2;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.dropzone.dragging .dropzone-content {
+  animation: pulse 1.5s infinite ease-in-out;
+}

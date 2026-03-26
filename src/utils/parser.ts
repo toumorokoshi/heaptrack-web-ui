@@ -41,6 +41,12 @@ export interface HeaptrackSummary {
   frees: number;
 }
 
+export interface FlamegraphNode {
+  name: string;
+  value: number;
+  children: FlamegraphNode[];
+}
+
 export function parseHeaptrack(data: string): HeaptrackProfile {
   const lines = data.split("\n");
   const profile: HeaptrackProfile = {
@@ -143,4 +149,114 @@ export function getSummary(profile: HeaptrackProfile): HeaptrackSummary {
     allocations: profile.allocations.filter((a) => a.type === "alloc").length,
     frees: profile.allocations.filter((a) => a.type === "free").length,
   };
+}
+
+export function getFlamegraphData(profile: HeaptrackProfile): FlamegraphNode {
+  const traceAllocations = new Map<number, number>();
+  for (const alloc of profile.allocations) {
+    if (
+      alloc.type === "alloc" &&
+      alloc.traceId !== undefined &&
+      alloc.size !== undefined
+    ) {
+      traceAllocations.set(
+        alloc.traceId,
+        (traceAllocations.get(alloc.traceId) || 0) + alloc.size,
+      );
+    }
+  }
+
+  const root: FlamegraphNode = { name: "all", value: 0, children: [] };
+  const traceToNodes = new Map<number, FlamegraphNode[]>();
+
+  // Helper to get symbol name
+  const getSymbolName = (symbolId: number) => {
+    return profile.strings[symbolId] || `symbol@0x${symbolId.toString(16)}`;
+  };
+
+  // Build nodes for each trace
+  // We need to process traces in an order that respects the parent-child relationship
+  // but since we have parentTraceId, we can just build the tree.
+
+  const getNodesForTrace = (traceId: number): FlamegraphNode[] => {
+    if (traceId === 0) return [];
+    if (traceToNodes.has(traceId)) return traceToNodes.get(traceId)!;
+
+    const trace = profile.traces[traceId];
+    if (!trace) return [];
+
+    const instruction = profile.instructions[trace.instructionId];
+    if (!instruction) return [];
+
+    // Instruction frames are inner-to-outer.
+    // In flamegraph, we want outer-to-inner.
+    const nodes: FlamegraphNode[] = instruction.frames
+      .slice()
+      .reverse()
+      .map((frame) => ({
+        name: getSymbolName(frame.symbolId),
+        value: 0,
+        children: [],
+      }));
+
+    traceToNodes.set(traceId, nodes);
+    return nodes;
+  };
+
+  // Assign allocation values to the innermost node of each trace
+  for (const [traceId, size] of traceAllocations.entries()) {
+    const nodes = getNodesForTrace(traceId);
+    if (nodes.length > 0) {
+      nodes[nodes.length - 1].value += size;
+    }
+  }
+
+  // Link nodes according to hierarchy
+  for (let i = 1; i < profile.traces.length; i++) {
+    const trace = profile.traces[i];
+    if (!trace) continue;
+
+    const nodes = getNodesForTrace(i);
+    if (nodes.length === 0) continue;
+
+    // Link inlined frames within the same instruction
+    for (let j = 0; j < nodes.length - 1; j++) {
+      if (!nodes[j].children.includes(nodes[j + 1])) {
+        nodes[j].children.push(nodes[j + 1]);
+      }
+    }
+
+    // Link the outermost frame of this trace to the innermost frame of the parent trace
+    const parentTraceId = trace.parentTraceId;
+    let parentNode: FlamegraphNode;
+
+    if (parentTraceId === 0) {
+      parentNode = root;
+    } else {
+      const parentNodes = getNodesForTrace(parentTraceId);
+      if (parentNodes.length > 0) {
+        parentNode = parentNodes[parentNodes.length - 1];
+      } else {
+        parentNode = root;
+      }
+    }
+
+    if (!parentNode.children.includes(nodes[0])) {
+      parentNode.children.push(nodes[0]);
+    }
+  }
+
+  // Propagate values up the tree
+  const propagate = (node: FlamegraphNode): number => {
+    const childrenValue = node.children.reduce(
+      (sum, child) => sum + propagate(child),
+      0,
+    );
+    node.value += childrenValue;
+    return node.value;
+  };
+
+  propagate(root);
+
+  return root;
 }

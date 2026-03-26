@@ -1,18 +1,28 @@
 import { useState, useCallback, useMemo } from "react";
 import "./App.css";
 import { Dropzone } from "./components/Dropzone";
-import { parseHeaptrack, getSummary } from "./utils/parser";
-import type { HeaptrackSummary } from "./utils/parser";
+import { Flamegraph } from "./components/Flamegraph";
+import { parseHeaptrack, getSummary, getFlamegraphData } from "./utils/parser";
+import type {
+  HeaptrackSummary,
+  HeaptrackProfile,
+  FlamegraphNode,
+} from "./utils/parser";
 
 function App() {
   const [loading, setLoading] = useState(false);
-  const [profileData, setProfileData] = useState<string | null>(null);
+  const [profile, setProfile] = useState<HeaptrackProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const summary = useMemo<HeaptrackSummary | null>(() => {
-    if (!profileData) return null;
-    return getSummary(parseHeaptrack(profileData));
-  }, [profileData]);
+    if (!profile) return null;
+    return getSummary(profile);
+  }, [profile]);
+
+  const flamegraphData = useMemo<FlamegraphNode | null>(() => {
+    if (!profile) return null;
+    return getFlamegraphData(profile);
+  }, [profile]);
 
   const onFileLoaded = useCallback((file: File) => {
     setLoading(true);
@@ -35,7 +45,13 @@ function App() {
           } else {
             const decompressedBuffer = event.data as ArrayBuffer;
             const text = new TextDecoder().decode(decompressedBuffer);
-            setProfileData(text);
+            try {
+              setProfile(parseHeaptrack(text));
+            } catch (err: unknown) {
+              const errorMessage =
+                err instanceof Error ? err.message : String(err);
+              setError(`Parsing failed: ${errorMessage}`);
+            }
             setLoading(false);
           }
           worker.terminate();
@@ -51,7 +67,12 @@ function App() {
       } else {
         // Assume plain text if not .zst
         const text = new TextDecoder().decode(arrayBuffer);
-        setProfileData(text);
+        try {
+          setProfile(parseHeaptrack(text));
+        } catch (err: unknown) {
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          setError(`Parsing failed: ${errorMessage}`);
+        }
         setLoading(false);
       }
     };
@@ -78,7 +99,7 @@ function App() {
       </header>
 
       <main>
-        {!profileData && !loading && (
+        {!profile && !loading && (
           <section id="upload">
             <Dropzone onFileLoaded={onFileLoaded} />
             {error && <div className="error-message">{error}</div>}
@@ -92,21 +113,24 @@ function App() {
           </section>
         )}
 
-        {profileData && summary && !loading && (
+        {profile && summary && !loading && (
           <section id="dashboard">
             <div className="success-banner">
               <h2>Profile Loaded Successfully</h2>
-              <p>Command: {summary.command}</p>
-              <button onClick={() => setProfileData(null)}>
+              <div className="profile-info">
+                <p>
+                  Command: <code>{summary.command}</code>
+                </p>
+                <p>
+                  Version: <code>{summary.version}</code>
+                </p>
+              </div>
+              <button onClick={() => setProfile(null)}>
                 Load Another File
               </button>
             </div>
 
             <div className="summary-grid">
-              <div className="summary-card">
-                <h3>Version</h3>
-                <div className="value">{summary.version}</div>
-              </div>
               <div className="summary-card">
                 <h3>Allocations</h3>
                 <div className="value">
@@ -121,9 +145,18 @@ function App() {
                 <h3>Symbols</h3>
                 <div className="value">{summary.symbols.toLocaleString()}</div>
               </div>
+              <div className="summary-card">
+                <h3>Traces</h3>
+                <div className="value">{summary.traces.toLocaleString()}</div>
+              </div>
             </div>
 
-            <pre className="raw-output">{profileData.slice(0, 1000)}...</pre>
+            {flamegraphData && (
+              <div className="flamegraph-section">
+                <h3>Allocation Flamegraph</h3>
+                <Flamegraph data={flamegraphData} />
+              </div>
+            )}
           </section>
         )}
       </main>

@@ -71,7 +71,8 @@ describe("App", () => {
       },
       { timeout: 3000 },
     );
-    expect(screen.getByText(/Command: test/i)).toBeInTheDocument();
+    expect(screen.getByText(/Command:/i)).toBeInTheDocument();
+    expect(screen.getByText(/test/i)).toBeInTheDocument();
     expect(screen.getAllByText(/1.0/i).length).toBeGreaterThanOrEqual(1);
   });
 });

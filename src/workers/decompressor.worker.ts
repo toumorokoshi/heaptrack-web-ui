@@ -12,4 +12,3 @@ self.onmessage = async (e: MessageEvent<ArrayBuffer>) => {
     self.postMessage({ error: (error as Error).message });
   }
 };
-

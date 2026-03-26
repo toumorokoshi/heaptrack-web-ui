@@ -4,7 +4,7 @@ Based on the initial implementation of drag-and-drop and zstd decompression, the
 
 ## 1. Visualizations
 
-- [ ] **Flamegraph**: Not yet implemented. Need to integrate `d3-flame-graph` with parsed data.
+- [x] **Flamegraph**: Integrated `d3-flame-graph` with parsed hierarchical trace data.
 - [ ] **Memory Timeline Chart**: Not yet implemented. Need to extract timestamped allocation data.
 - [ ] **Top Allocations Table**: Currently only a summary grid is shown. A detailed, sortable table is needed.
 

@@ -47,6 +47,16 @@ export interface FlamegraphNode {
   children: FlamegraphNode[];
 }
 
+export interface AllocationSummary {
+  traceId: number;
+  symbolName: string;
+  filePath?: string;
+  line?: number;
+  totalAllocated: number;
+  peakAllocation: number;
+  leaked: number;
+}
+
 export function parseHeaptrack(data: string): HeaptrackProfile {
   const lines = data.split("\n");
   const profile: HeaptrackProfile = {
@@ -259,4 +269,70 @@ export function getFlamegraphData(profile: HeaptrackProfile): FlamegraphNode {
   propagate(root);
 
   return root;
+}
+
+export function getAllocationSummaries(
+  profile: HeaptrackProfile,
+): AllocationSummary[] {
+  const addressToInfo = new Map<string, { size: number; traceId: number }>();
+  const traceStats = new Map<
+    number,
+    { total: number; current: number; peak: number }
+  >();
+
+  for (const alloc of profile.allocations) {
+    if (alloc.type === "alloc") {
+      const { address, size = 0, traceId = 0 } = alloc;
+      addressToInfo.set(address, { size, traceId });
+
+      let stats = traceStats.get(traceId);
+      if (!stats) {
+        stats = { total: 0, current: 0, peak: 0 };
+        traceStats.set(traceId, stats);
+      }
+      stats.total += size;
+      stats.current += size;
+      if (stats.current > stats.peak) {
+        stats.peak = stats.current;
+      }
+    } else if (alloc.type === "free") {
+      const info = addressToInfo.get(alloc.address);
+      if (info) {
+        const stats = traceStats.get(info.traceId);
+        if (stats) {
+          stats.current -= info.size;
+        }
+        addressToInfo.delete(alloc.address);
+      }
+    }
+  }
+
+  const summaries: AllocationSummary[] = [];
+  for (const [traceId, stats] of traceStats.entries()) {
+    if (traceId === 0) continue;
+    const trace = profile.traces[traceId];
+    if (!trace) continue;
+    const instruction = profile.instructions[trace.instructionId];
+    if (!instruction) continue;
+
+    // Use the innermost frame for the primary description
+    const frame = instruction.frames[0];
+    const symbolName =
+      profile.strings[frame.symbolId] ||
+      `symbol@0x${frame.symbolId.toString(16)}`;
+    const filePath =
+      frame.fileId !== undefined ? profile.strings[frame.fileId] : undefined;
+
+    summaries.push({
+      traceId,
+      symbolName,
+      filePath,
+      line: frame.line,
+      totalAllocated: stats.total,
+      peakAllocation: stats.peak,
+      leaked: stats.current,
+    });
+  }
+
+  return summaries;
 }

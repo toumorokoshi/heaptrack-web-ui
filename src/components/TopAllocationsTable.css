@@ -1,0 +1,94 @@
+.top-allocations-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 16px;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  margin-top: 1.5rem;
+  backdrop-filter: blur(5px);
+}
+
+.top-allocations-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.top-allocations-table th {
+  padding: 1rem 1.5rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  position: sticky;
+  top: 0;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.2s;
+}
+
+.top-allocations-table th:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.top-allocations-table th.active-sort {
+  color: var(--accent-color);
+}
+
+.top-allocations-table td {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: top;
+}
+
+.top-allocations-table tr:last-child td {
+  border-bottom: none;
+}
+
+.top-allocations-table tr:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sort-indicator {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.monospace {
+  font-family: "Fira Code", "Courier New", Courier, monospace;
+}
+
+.symbol-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  word-break: break-all;
+  max-width: 500px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-path {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+  opacity: 0.8;
+}
+
+.value {
+  text-align: right;
+  white-space: nowrap;
+  color: var(--accent-color);
+  font-weight: 500;
+}

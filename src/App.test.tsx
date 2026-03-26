@@ -48,7 +48,7 @@ describe("App", () => {
       },
       { timeout: 3000 },
     );
-    expect(screen.getByText(/Allocations/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Allocations$/i)).toBeInTheDocument();
     expect(screen.getByText(/Symbols/i)).toBeInTheDocument();
   });
 

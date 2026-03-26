@@ -2,11 +2,18 @@ import { useState, useCallback, useMemo } from "react";
 import "./App.css";
 import { Dropzone } from "./components/Dropzone";
 import { Flamegraph } from "./components/Flamegraph";
-import { parseHeaptrack, getSummary, getFlamegraphData } from "./utils/parser";
+import { TopAllocationsTable } from "./components/TopAllocationsTable";
+import {
+  parseHeaptrack,
+  getSummary,
+  getFlamegraphData,
+  getAllocationSummaries,
+} from "./utils/parser";
 import type {
   HeaptrackSummary,
   HeaptrackProfile,
   FlamegraphNode,
+  AllocationSummary,
 } from "./utils/parser";
 
 function App() {
@@ -22,6 +29,11 @@ function App() {
   const flamegraphData = useMemo<FlamegraphNode | null>(() => {
     if (!profile) return null;
     return getFlamegraphData(profile);
+  }, [profile]);
+
+  const allocationSummaries = useMemo<AllocationSummary[] | null>(() => {
+    if (!profile) return null;
+    return getAllocationSummaries(profile);
   }, [profile]);
 
   const onFileLoaded = useCallback((file: File) => {
@@ -155,6 +167,13 @@ function App() {
               <div className="flamegraph-section">
                 <h3>Allocation Flamegraph</h3>
                 <Flamegraph data={flamegraphData} />
+              </div>
+            )}
+
+            {allocationSummaries && (
+              <div className="top-allocations-section">
+                <h3>Top Allocations</h3>
+                <TopAllocationsTable summaries={allocationSummaries} />
               </div>
             )}
           </section>

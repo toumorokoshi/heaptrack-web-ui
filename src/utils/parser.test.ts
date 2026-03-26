@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { parseHeaptrack, getFlamegraphData } from "./parser";
+import {
+  parseHeaptrack,
+  getFlamegraphData,
+  getAllocationSummaries,
+} from "./parser";
 
 describe("parseHeaptrack", () => {
   it("should parse basic heaptrack data", () => {
@@ -107,5 +111,45 @@ a 50 1
     expect(flameData.children[0].children).toHaveLength(1);
     expect(flameData.children[0].children[0].name).toBe("inner");
     expect(flameData.children[0].children[0].value).toBe(0x50);
+  });
+});
+
+describe("getAllocationSummaries", () => {
+  it("should calculate correct allocation stats", () => {
+    const data = `v 1
+X cmd
+s 1 symbol1
+s 1 symbol2
+i 100 1 1
+i 200 1 2
+t 1 0
+t 2 0
+a 100 1
++ 10
+a 200 2
++ 20
+- 10
+a 50 1
++ 30`;
+    const profile = parseHeaptrack(data);
+    const summaries = getAllocationSummaries(profile);
+
+    expect(summaries).toHaveLength(2);
+
+    const s1 = summaries.find((s) => s.symbolName === "symbol1");
+    const s2 = summaries.find((s) => s.symbolName === "symbol2");
+
+    expect(s1).toBeDefined();
+    // 0x100 + 0x50 = 0x150 (336 in decimal)
+    expect(s1?.totalAllocated).toBe(0x100 + 0x50);
+    // Peak was during the first allocation
+    expect(s1?.peakAllocation).toBe(0x100);
+    // Final state: 0x50 leaked
+    expect(s1?.leaked).toBe(0x50);
+
+    expect(s2).toBeDefined();
+    expect(s2?.totalAllocated).toBe(0x200);
+    expect(s2?.peakAllocation).toBe(0x200);
+    expect(s2?.leaked).toBe(0x200);
   });
 });

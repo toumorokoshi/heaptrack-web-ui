@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import "./App.css";
 import { Dropzone } from "./components/Dropzone";
-import { parseHeaptrack } from "./utils/parser";
+import { parseHeaptrack, getSummary } from "./utils/parser";
 import type { HeaptrackSummary } from "./utils/parser";
 
 function App() {
@@ -11,7 +11,7 @@ function App() {
 
   const summary = useMemo<HeaptrackSummary | null>(() => {
     if (!profileData) return null;
-    return parseHeaptrack(profileData);
+    return getSummary(parseHeaptrack(profileData));
   }, [profileData]);
 
   const onFileLoaded = useCallback((file: File) => {

@@ -10,8 +10,8 @@ Based on the initial implementation of drag-and-drop and zstd decompression, the
 
 ## 2. Parsing
 
-- [ ] **Advanced Parsing**: The current parser only provides a summary (counts). It needs to build a full model of allocations, frees, and call stacks to feed the visualizations.
-- [ ] **Instruction/Symbol Mapping**: Need to properly map instruction pointers to symbols and files.
+- [x] **Advanced Parsing**: I've implemented a full model of allocations, frees, and call stacks in `src/utils/parser.ts`.
+- [x] **Instruction/Symbol Mapping**: Properly mapping instruction pointers to symbols and files via string table.
 
 ## 3. UI/UX
 

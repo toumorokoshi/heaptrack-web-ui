@@ -1,9 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import "./App.css";
 import { Dropzone } from "./components/Dropzone";
-import { Flamegraph } from "./components/Flamegraph";
-import { TopAllocationsTable } from "./components/TopAllocationsTable";
-import { MemoryTimelineChart } from "./components/MemoryTimelineChart";
+import { Dashboard } from "./components/Dashboard";
 import {
   parseHeaptrack,
   getSummary,
@@ -134,72 +132,23 @@ function App() {
         )}
 
         {profile && summary && !loading && (
-          <section id="dashboard">
-            <div className="success-banner">
-              <h2>Profile Loaded Successfully</h2>
-              <div className="profile-info">
-                <p>
-                  Command: <code>{summary.command}</code>
-                </p>
-                <p>
-                  Version: <code>{summary.version}</code>
-                </p>
-              </div>
-              <button onClick={() => setProfile(null)}>
-                Load Another File
-              </button>
-            </div>
-
-            <div className="summary-grid">
-              <div className="summary-card">
-                <h3>Allocations</h3>
-                <div className="value">
-                  {summary.allocations.toLocaleString()}
-                </div>
-              </div>
-              <div className="summary-card">
-                <h3>Frees</h3>
-                <div className="value">{summary.frees.toLocaleString()}</div>
-              </div>
-              <div className="summary-card">
-                <h3>Symbols</h3>
-                <div className="value">{summary.symbols.toLocaleString()}</div>
-              </div>
-              <div className="summary-card">
-                <h3>Traces</h3>
-                <div className="value">{summary.traces.toLocaleString()}</div>
-              </div>
-            </div>
-
-            {timelineData && timelineData.length > 0 && (
-              <div className="timeline-section">
-                <h3>Memory Usage Timeline</h3>
-                <MemoryTimelineChart data={timelineData} />
-              </div>
-            )}
-
-            {flamegraphData && (
-              <div className="flamegraph-section">
-                <h3>Allocation Flamegraph</h3>
-                <Flamegraph data={flamegraphData} />
-              </div>
-            )}
-
-            {allocationSummaries && (
-              <div className="top-allocations-section">
-                <h3>Top Allocations</h3>
-                <TopAllocationsTable summaries={allocationSummaries} />
-              </div>
-            )}
-          </section>
+          <Dashboard
+            summary={summary}
+            flamegraphData={flamegraphData}
+            allocationSummaries={allocationSummaries}
+            timelineData={timelineData}
+            onReset={() => setProfile(null)}
+          />
         )}
       </main>
 
-      <div className="ticks"></div>
+      {!profile && <div className="ticks"></div>}
 
-      <footer>
-        <p>&copy; 2026 Heaptrack Web UI. Pure client-side memory analysis.</p>
-      </footer>
+      {!profile && (
+        <footer>
+          <p>&copy; 2026 Heaptrack Web UI. Pure client-side memory analysis.</p>
+        </footer>
+      )}
     </div>
   );
 }

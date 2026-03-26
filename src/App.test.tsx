@@ -43,7 +43,7 @@ describe("App", () => {
     await waitFor(
       () => {
         expect(
-          screen.getByText(/Profile Loaded Successfully/i),
+          screen.getByText(/Profile Info/i),
         ).toBeInTheDocument();
       },
       { timeout: 3000 },
@@ -66,7 +66,7 @@ describe("App", () => {
     await waitFor(
       () => {
         expect(
-          screen.getByText(/Profile Loaded Successfully/i),
+          screen.getByText(/Profile Info/i),
         ).toBeInTheDocument();
       },
       { timeout: 3000 },

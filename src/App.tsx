@@ -3,17 +3,20 @@ import "./App.css";
 import { Dropzone } from "./components/Dropzone";
 import { Flamegraph } from "./components/Flamegraph";
 import { TopAllocationsTable } from "./components/TopAllocationsTable";
+import { MemoryTimelineChart } from "./components/MemoryTimelineChart";
 import {
   parseHeaptrack,
   getSummary,
   getFlamegraphData,
   getAllocationSummaries,
+  getTimelineData,
 } from "./utils/parser";
 import type {
   HeaptrackSummary,
   HeaptrackProfile,
   FlamegraphNode,
   AllocationSummary,
+  TimelinePoint,
 } from "./utils/parser";
 
 function App() {
@@ -34,6 +37,11 @@ function App() {
   const allocationSummaries = useMemo<AllocationSummary[] | null>(() => {
     if (!profile) return null;
     return getAllocationSummaries(profile);
+  }, [profile]);
+
+  const timelineData = useMemo<TimelinePoint[] | null>(() => {
+    if (!profile) return null;
+    return getTimelineData(profile);
   }, [profile]);
 
   const onFileLoaded = useCallback((file: File) => {
@@ -162,6 +170,13 @@ function App() {
                 <div className="value">{summary.traces.toLocaleString()}</div>
               </div>
             </div>
+
+            {timelineData && timelineData.length > 0 && (
+              <div className="timeline-section">
+                <h3>Memory Usage Timeline</h3>
+                <MemoryTimelineChart data={timelineData} />
+              </div>
+            )}
 
             {flamegraphData && (
               <div className="flamegraph-section">

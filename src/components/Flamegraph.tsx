@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import flamegraph from "d3-flame-graph";
 import * as d3 from "d3";
-import { FlamegraphNode } from "../utils/parser";
+import type { FlamegraphNode } from "../utils/parser";
 import "./Flamegraph.css";
 
 interface Props {

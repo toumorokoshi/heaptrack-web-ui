@@ -197,6 +197,26 @@ main {
   color: var(--accent-color);
 }
 
+.timeline-section,
+.flamegraph-section,
+.top-allocations-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  padding: 1.5rem;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+  backdrop-filter: blur(5px);
+}
+
+.timeline-section h3,
+.flamegraph-section h3,
+.top-allocations-section h3 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
 .raw-output {
   background: #1a1d23;
   padding: 1.5rem;

@@ -29,6 +29,12 @@ export interface AllocationEvent {
   address: string;
   size?: number;
   traceId?: number;
+  timestamp: number;
+}
+
+export interface TimelinePoint {
+  timestamp: number;
+  heapUsage: number;
 }
 
 export interface HeaptrackSummary {
@@ -69,6 +75,7 @@ export function parseHeaptrack(data: string): HeaptrackProfile {
   };
 
   let lastAlloc: { size: number; traceId: number } | null = null;
+  let currentTimestamp = 0;
 
   for (const line of lines) {
     if (!line) continue;
@@ -81,6 +88,10 @@ export function parseHeaptrack(data: string): HeaptrackProfile {
         break;
       case "X":
         profile.command = parts.slice(1).join(" ");
+        break;
+      case "c":
+        // c timestamp
+        currentTimestamp = parseInt(parts[1], 16);
         break;
       case "s": {
         // s length string
@@ -131,21 +142,58 @@ export function parseHeaptrack(data: string): HeaptrackProfile {
             address,
             size: lastAlloc.size,
             traceId: lastAlloc.traceId,
+            timestamp: currentTimestamp,
           });
-          lastAlloc = null;
+          // Do not null out lastAlloc, as multiple + records can follow one a record
         }
         break;
       }
       case "-": {
         // - address
         const address = parts[1];
-        profile.allocations.push({ type: "free", address });
+        profile.allocations.push({
+          type: "free",
+          address,
+          timestamp: currentTimestamp,
+        });
         break;
       }
     }
   }
 
   return profile;
+}
+
+export function getTimelineData(profile: HeaptrackProfile): TimelinePoint[] {
+  const timeline: TimelinePoint[] = [];
+  let currentHeapUsage = 0;
+  const addressToSize = new Map<string, number>();
+
+  for (const alloc of profile.allocations) {
+    if (alloc.type === "alloc") {
+      const size = alloc.size || 0;
+      addressToSize.set(alloc.address, size);
+      currentHeapUsage += size;
+    } else {
+      const size = addressToSize.get(alloc.address) || 0;
+      currentHeapUsage -= size;
+      addressToSize.delete(alloc.address);
+    }
+
+    if (
+      timeline.length > 0 &&
+      timeline[timeline.length - 1].timestamp === alloc.timestamp
+    ) {
+      timeline[timeline.length - 1].heapUsage = currentHeapUsage;
+    } else {
+      timeline.push({
+        timestamp: alloc.timestamp,
+        heapUsage: currentHeapUsage,
+      });
+    }
+  }
+
+  return timeline;
 }
 
 // Keep the old summary function for compatibility if needed, or update it

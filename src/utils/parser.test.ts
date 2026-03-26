@@ -3,6 +3,7 @@ import {
   parseHeaptrack,
   getFlamegraphData,
   getAllocationSummaries,
+  getTimelineData,
 } from "./parser";
 
 describe("parseHeaptrack", () => {
@@ -41,11 +42,41 @@ a 12000 1
       address: "0",
       size: 0x12000,
       traceId: 1,
+      timestamp: 0,
     });
     expect(profile.allocations[1]).toEqual({
       type: "free",
       address: "0",
+      timestamp: 0,
     });
+  });
+
+  it("should handle multiple + records for the same a record", () => {
+    const data = `v 1
+X cmd
+a 100 1
++ 10
++ 20
++ 30`;
+    const profile = parseHeaptrack(data);
+    expect(profile.allocations).toHaveLength(3);
+    expect(profile.allocations[0].size).toBe(0x100);
+    expect(profile.allocations[1].size).toBe(0x100);
+    expect(profile.allocations[2].size).toBe(0x100);
+  });
+
+  it("should parse timestamps from c records", () => {
+    const data = `v 1
+X cmd
+c a
+a 100 1
++ 10
+c 14
+a 200 1
++ 20`;
+    const profile = parseHeaptrack(data);
+    expect(profile.allocations[0].timestamp).toBe(10);
+    expect(profile.allocations[1].timestamp).toBe(20);
   });
 
   it("should handle inlined instructions", () => {
@@ -151,5 +182,27 @@ a 50 1
     expect(s2?.totalAllocated).toBe(0x200);
     expect(s2?.peakAllocation).toBe(0x200);
     expect(s2?.leaked).toBe(0x200);
+  });
+});
+
+describe("getTimelineData", () => {
+  it("should calculate heap usage over time", () => {
+    const data = `v 1
+X cmd
+c 0
+a 100 1
++ 10
+c 64
+a 50 1
++ 20
+c c8
+- 10`;
+    const profile = parseHeaptrack(data);
+    const timeline = getTimelineData(profile);
+
+    expect(timeline).toHaveLength(3);
+    expect(timeline[0]).toEqual({ timestamp: 0, heapUsage: 0x100 });
+    expect(timeline[1]).toEqual({ timestamp: 100, heapUsage: 0x150 });
+    expect(timeline[2]).toEqual({ timestamp: 200, heapUsage: 0x50 });
   });
 });

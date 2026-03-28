@@ -1,8 +1,7 @@
-FROM node:22-alpine
+# multiple requirements (machineid, coreutils, libsecret) required for gemini cli
+FROM node:25-trixie-slim
 # NOTE: For local development, it is recommended to mount the source code as a volume:
 # docker run -p 5173:5173 -v $(pwd):/app -v /app/node_modules <image-name>
-# needed to run gemini cli
-RUN apk add coreutils libsecret
 
 # Set working directory
 WORKDIR /app

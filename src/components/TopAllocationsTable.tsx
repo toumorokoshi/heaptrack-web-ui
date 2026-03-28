@@ -14,9 +14,20 @@ export const TopAllocationsTable: React.FC<TopAllocationsTableProps> = ({
 }) => {
   const [sortKey, setSortKey] = useState<SortKey>("totalAllocated");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredSummaries = useMemo(() => {
+    if (!searchTerm.trim()) return summaries;
+    const term = searchTerm.toLowerCase();
+    return summaries.filter(
+      (s) =>
+        s.symbolName.toLowerCase().includes(term) ||
+        (s.filePath && s.filePath.toLowerCase().includes(term))
+    );
+  }, [summaries, searchTerm]);
 
   const sortedSummaries = useMemo(() => {
-    return [...summaries].sort((a, b) => {
+    return [...filteredSummaries].sort((a, b) => {
       const aValue = a[sortKey];
       const bValue = b[sortKey];
 
@@ -27,7 +38,7 @@ export const TopAllocationsTable: React.FC<TopAllocationsTableProps> = ({
       if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
       return 0;
     });
-  }, [summaries, sortKey, sortOrder]);
+  }, [filteredSummaries, sortKey, sortOrder]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -68,6 +79,26 @@ export const TopAllocationsTable: React.FC<TopAllocationsTableProps> = ({
 
   return (
     <div className="top-allocations-container">
+      <div className="table-controls">
+        <div className="search-box">
+          <svg className="search-icon"><use href="/icons.svg#search-icon"></use></svg>
+          <input
+            type="text"
+            placeholder="Search symbols or files..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+          {searchTerm && (
+            <button className="clear-search" onClick={() => setSearchTerm("")}>
+              &times;
+            </button>
+          )}
+        </div>
+        <div className="results-count">
+          {filteredSummaries.length} of {summaries.length} results
+        </div>
+      </div>
       <table className="top-allocations-table">
         <thead>
           <tr>

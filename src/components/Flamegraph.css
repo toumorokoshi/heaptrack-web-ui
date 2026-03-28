@@ -1,16 +1,102 @@
 .flamegraph-wrapper {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   background: var(--card-bg, #1a1a1a);
-  border-radius: 8px;
-  padding: 1rem;
+  border-radius: 12px;
+  padding: 1.5rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   margin-top: 1.5rem;
   overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.flamegraph-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.flamegraph-controls .search-box {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+  display: flex;
+  align-items: center;
+}
+
+.flamegraph-controls .search-icon {
+  position: absolute;
+  left: 0.75rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  fill: var(--text-secondary);
+  pointer-events: none;
+}
+
+.flamegraph-controls .search-input {
+  width: 100%;
+  padding: 0.6rem 2.5rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.flamegraph-controls .search-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.flamegraph-controls .clear-search {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+}
+
+.flamegraph-controls .clear-search:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.action-button {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
 }
 
 .flamegraph-container {
   width: 100%;
   min-height: 400px;
+  overflow: hidden;
 }
 
 /* Base d3-flame-graph styles */
@@ -57,13 +143,32 @@
 
 .d3-flame-graph-tip {
   line-height: 1.5;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.8);
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.9);
   color: #fff;
-  border-radius: 4px;
-  font-size: 11px;
+  border-radius: 8px;
+  font-size: 12px;
   pointer-events: none;
   z-index: 100;
   max-width: 90vw;
   text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+}
+
+.d3-flame-graph-tip .name {
+  font-weight: bold;
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+
+.d3-flame-graph-tip .value {
+  color: var(--accent-color, #00f2fe);
+}
+
+.d3-flame-graph .highlight {
+  fill: #ff0 !important;
+  stroke: #000 !important;
+  stroke-width: 1 !important;
+  fill-opacity: 1 !important;
 }

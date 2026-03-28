@@ -60,4 +60,35 @@ describe("TopAllocationsTable", () => {
     expect(rowsAfterToggle[0]).toHaveTextContent("func2");
     expect(rowsAfterToggle[1]).toHaveTextContent("func1");
   });
+
+  it("filters the table when search term is entered", () => {
+    render(<TopAllocationsTable summaries={mockSummaries} />);
+
+    // Initially both should be present
+    expect(screen.getByText("func1")).toBeInTheDocument();
+    expect(screen.getByText("func2")).toBeInTheDocument();
+
+    // Type in search box
+    const searchInput = screen.getByPlaceholderText(/Search symbols or files/i);
+    fireEvent.change(searchInput, { target: { value: "func1" } });
+
+    // Only func1 should be visible
+    expect(screen.getByText("func1")).toBeInTheDocument();
+    expect(screen.queryByText("func2")).not.toBeInTheDocument();
+
+    // Verify result count
+    expect(screen.getByText(/1 of 2 results/i)).toBeInTheDocument();
+
+    // Clear search
+    fireEvent.click(screen.getByText("×"));
+
+    // Both should be back
+    expect(screen.getByText("func1")).toBeInTheDocument();
+    expect(screen.getByText("func2")).toBeInTheDocument();
+
+    // Search by file path
+    fireEvent.change(searchInput, { target: { value: "file2" } });
+    expect(screen.queryByText("func1")).not.toBeInTheDocument();
+    expect(screen.getByText("func2")).toBeInTheDocument();
+  });
 });

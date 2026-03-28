@@ -108,9 +108,8 @@ a 100 1
 + 10`;
     const profile = parseHeaptrack(data);
     const flameData = getFlamegraphData(profile);
-    // This could potentially cause infinite recursion if not careful.
-    // My current implementation of getNodesForTrace uses traceToNodes map to prevent recursion.
-    // Since it points to itself and not root (0), it's unreachable from root.
-    expect(flameData.children).toHaveLength(0);
+    // My current implementation handles self-cycles by attaching to root.
+    expect(flameData.children).toHaveLength(1);
+    expect(flameData.children[0].name).toBe("sym");
   });
 });

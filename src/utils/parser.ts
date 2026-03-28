@@ -355,7 +355,9 @@ export function getFlamegraphData(profile: HeaptrackProfile): FlamegraphNode {
     const parentTraceId = trace.parentTraceId;
     let parentNode: FlamegraphNode;
 
-    if (parentTraceId <= 0) {
+    if (parentTraceId === i) {
+      parentNode = root;
+    } else if (parentTraceId <= 0) {
       parentNode = root;
     } else {
       const parentNodes = getNodesForTrace(parentTraceId);
@@ -371,7 +373,11 @@ export function getFlamegraphData(profile: HeaptrackProfile): FlamegraphNode {
     }
   }
 
+  const visited = new Set<FlamegraphNode>();
   const propagate = (node: FlamegraphNode): number => {
+    if (visited.has(node)) return 0;
+    visited.add(node);
+
     const childrenValue = node.children.reduce(
       (sum, child) => sum + propagate(child),
       0,

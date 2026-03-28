@@ -22,5 +22,5 @@ Based on the initial implementation of drag-and-drop and zstd decompression, the
 ## 4. Production Readiness
 
 - [ ] **Error Handling**: More robust error handling for malformed heaptrack files.
-- [ ] **Progress Indicators**: Show actual decompression/parsing progress percentage.
+- [x] **Progress Indicators**: Show actual decompression/parsing progress percentage.
 - [ ] **PWA Support**: For offline analysis.

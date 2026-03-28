@@ -19,6 +19,8 @@ import type {
 
 function App() {
   const [loading, setLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingStatus, setLoadingStatus] = useState("");
   const [profile, setProfile] = useState<HeaptrackProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,55 +46,43 @@ function App() {
 
   const onFileLoaded = useCallback((file: File) => {
     setLoading(true);
+    setLoadingProgress(0);
+    setLoadingStatus("Reading file...");
     setError(null);
 
     const reader = new FileReader();
     reader.onload = (e) => {
       const arrayBuffer = e.target?.result as ArrayBuffer;
 
-      if (file.name.endsWith(".zst")) {
-        const worker = new Worker(
-          new URL("./workers/decompressor.worker.ts", import.meta.url),
-          { type: "module" },
-        );
+      const worker = new Worker(
+        new URL("./workers/processor.worker.ts", import.meta.url),
+        { type: "module" },
+      );
 
-        worker.onmessage = (event) => {
-          if (event.data.error) {
-            setError(`Decompression failed: ${event.data.error}`);
-            setLoading(false);
-          } else {
-            const decompressedBuffer = event.data as ArrayBuffer;
-            const text = new TextDecoder().decode(decompressedBuffer);
-            try {
-              setProfile(parseHeaptrack(text));
-            } catch (err: unknown) {
-              const errorMessage =
-                err instanceof Error ? err.message : String(err);
-              setError(`Parsing failed: ${errorMessage}`);
-            }
-            setLoading(false);
-          }
-          worker.terminate();
-        };
-
-        worker.onerror = (err) => {
-          setError(`Worker error: ${err.message}`);
+      worker.onmessage = (event) => {
+        const data = event.data;
+        if (data.type === "progress") {
+          setLoadingProgress(data.progress);
+          setLoadingStatus(data.status);
+        } else if (data.type === "result") {
+          setProfile(data.profile);
           setLoading(false);
           worker.terminate();
-        };
-
-        worker.postMessage(arrayBuffer, [arrayBuffer]);
-      } else {
-        // Assume plain text if not .zst
-        const text = new TextDecoder().decode(arrayBuffer);
-        try {
-          setProfile(parseHeaptrack(text));
-        } catch (err: unknown) {
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          setError(`Parsing failed: ${errorMessage}`);
+        } else if (data.type === "error") {
+          setError(`Processing failed: ${data.message}`);
+          setLoading(false);
+          worker.terminate();
         }
+      };
+
+      worker.onerror = (err) => {
+        setError(`Worker error: ${err.message}`);
         setLoading(false);
-      }
+        worker.terminate();
+      };
+
+      const compressed = file.name.endsWith(".zst");
+      worker.postMessage({ data: arrayBuffer, compressed }, [arrayBuffer]);
     };
 
     reader.onerror = () => {
@@ -126,8 +116,16 @@ function App() {
 
         {loading && (
           <section id="loading">
-            <div className="spinner"></div>
-            <p>Decompressing and parsing profile...</p>
+            <div className="progress-container">
+              <div className="spinner"></div>
+              <div className="progress-bar-wrapper">
+                <div 
+                  className="progress-bar" 
+                  style={{ width: `${loadingProgress * 100}%` }}
+                ></div>
+              </div>
+              <p>{loadingStatus} ({Math.round(loadingProgress * 100)}%)</p>
+            </div>
           </section>
         )}
 

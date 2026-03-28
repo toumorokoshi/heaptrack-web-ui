@@ -1,16 +1,25 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import App from "./App";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { parseHeaptrack } from "./utils/parser";
 
 // Mock Worker
 class MockWorker {
-  onmessage: ((ev: MessageEvent) => void) | null = null;
+  onmessage: ((ev: { data: any }) => void) | null = null;
   onerror: ((ev: ErrorEvent) => void) | null = null;
-  postMessage(message: unknown) {
-    // In a real test we would simulate decompression
-    // For simplicity, we just echo back the data or a mock error
+  postMessage(message: any) {
     if (this.onmessage) {
-      this.onmessage({ data: message } as MessageEvent);
+      // Send progress first
+      this.onmessage({
+        data: { type: "progress", progress: 0.5, status: "Mock Parsing..." },
+      });
+
+      // Simulation: decode and parse
+      const { data } = message;
+      const text = new TextDecoder().decode(data);
+      const profile = parseHeaptrack(text);
+
+      this.onmessage({ data: { type: "result", profile } });
     }
   }
   terminate() {}

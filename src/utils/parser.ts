@@ -76,8 +76,12 @@ function safeParseInt(value: string | undefined): number {
   return parseInt(value, 16);
 }
 
-export function parseHeaptrack(data: string): HeaptrackProfile {
+export function parseHeaptrack(
+  data: string,
+  onProgress?: (progress: number) => void,
+): HeaptrackProfile {
   const lines = data.split("\n");
+  const totalLines = lines.length;
   const profile: HeaptrackProfile = {
     version: "unknown",
     command: "unknown",
@@ -91,8 +95,11 @@ export function parseHeaptrack(data: string): HeaptrackProfile {
   let lastAlloc: { size: number; traceId: number } | null = null;
   let currentTimestamp = 0;
 
-  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+  for (let lineIdx = 0; lineIdx < totalLines; lineIdx++) {
     const line = lines[lineIdx];
+    if (onProgress && lineIdx % 5000 === 0) {
+      onProgress(lineIdx / totalLines);
+    }
     if (!line) continue;
     const parts = line.split(" ");
     const type = parts[0];

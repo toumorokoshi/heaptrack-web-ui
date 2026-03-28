@@ -102,7 +102,7 @@
 }
 
 .top-allocations-table th {
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1.5rem;
   background-color: rgba(0, 0, 0, 0.2);
   position: sticky;
   top: 0;
@@ -127,7 +127,7 @@
 }
 
 .top-allocations-table td {
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1.5rem;
   border-bottom: 1px solid var(--border-color);
   vertical-align: top;
 }
@@ -159,10 +159,16 @@
   font-weight: 500;
   color: var(--text-primary);
   word-break: break-all;
-  max-width: 400px;
+  max-width: 600px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (max-width: 1400px) {
+  .symbol-name {
+    max-width: 400px;
+  }
 }
 
 @media (max-width: 1000px) {
@@ -185,7 +191,7 @@
 
   .top-allocations-table th,
   .top-allocations-table td {
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 1rem;
   }
 }
 

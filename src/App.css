@@ -36,8 +36,15 @@ body {
   flex-direction: column;
   min-height: 100vh;
   padding: 0 2rem;
-  max-width: 1200px;
+  width: 80%;
   margin: 0 auto;
+}
+
+@media (max-width: 1200px) {
+  .app-container {
+    width: 95%;
+    padding: 0 1rem;
+  }
 }
 
 header {

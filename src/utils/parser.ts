@@ -84,7 +84,6 @@ export function parseHeaptrack(
   let start = 0;
   let end = data.indexOf("\n");
   let lineCount = 0;
-  const approxTotalLines = data.length / 50; // heuristic
 
   while (end !== -1) {
     const line = data.substring(start, end);

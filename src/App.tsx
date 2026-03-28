@@ -3,7 +3,6 @@ import "./App.css";
 import { Dropzone } from "./components/Dropzone";
 import { Dashboard } from "./components/Dashboard";
 import {
-  parseHeaptrack,
   getSummary,
   getFlamegraphData,
   getAllocationSummaries,

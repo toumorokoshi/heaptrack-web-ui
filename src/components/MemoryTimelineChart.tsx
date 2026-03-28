@@ -160,7 +160,8 @@ export const MemoryTimelineChart = ({ data }: Props) => {
         tooltip.style("opacity", 0);
       })
       .on("mousemove", (event) => {
-        const x0 = x.invert(d3.pointer(event)[0]);
+        const [mx, my] = d3.pointer(event);
+        const x0 = x.invert(mx);
         const i = bisect(data, x0, 1);
         const d0 = data[i - 1];
         const d1 = data[i];
@@ -168,10 +169,17 @@ export const MemoryTimelineChart = ({ data }: Props) => {
         if (!d) return;
 
         focus.attr("transform", `translate(${x(d.timestamp)},${y(d.heapUsage)})`);
+        
+        // Coordinates relative to the container (wrapper)
+        // mx/my are relative to the overlay rect which starts at margin.left/top
+        // We also add the 10px padding from the wrapper CSS
+        const tooltipX = mx + margin.left + 10;
+        const tooltipY = my + margin.top + 10;
+        
         tooltip
           .html(`Usage: ${formatBytes(d.heapUsage)}<br/>Time: ${formatTime(d.timestamp)}`)
-          .style("left", `${event.pageX + 10}px`)
-          .style("top", `${event.pageY - 28}px`);
+          .style("left", `${tooltipX + 15}px`)
+          .style("top", `${tooltipY - 20}px`);
       });
 
     return () => {

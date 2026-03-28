@@ -106,12 +106,14 @@ function App() {
             <div className="progress-container">
               <div className="spinner"></div>
               <div className="progress-bar-wrapper">
-                <div 
-                  className="progress-bar" 
+                <div
+                  className="progress-bar"
                   style={{ width: `${loadingProgress * 100}%` }}
                 ></div>
               </div>
-              <p>{loadingStatus} ({Math.round(loadingProgress * 100)}%)</p>
+              <p>
+                {loadingStatus} ({Math.round(loadingProgress * 100)}%)
+              </p>
             </div>
           </section>
         )}

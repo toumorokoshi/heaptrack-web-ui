@@ -62,3 +62,7 @@ just fix     # or npm run lint -- --fix and prettier
 ### CI
 
 Continuous Integration is handled via GitHub Actions, running linting and tests on every push.
+
+### Releases
+
+Releases are automatically created when a versioned git tag (e.g., `v1.0.0`) is pushed to the repository. The build output is packaged as a `.zip` file and attached to the GitHub release.

@@ -29,12 +29,13 @@ self.onmessage = async (e: MessageEvent<ProcessingRequest>) => {
 
     const updateProgress = (force = false) => {
       const now = Date.now();
-      if (force || now - lastProgressUpdate > 100) { // Update every 100ms
+      if (force || now - lastProgressUpdate > 100) {
+        // Update every 100ms
         lastProgressUpdate = now;
-        self.postMessage({ 
-          type: "progress", 
-          progress: (bytesProcessed / totalBytes) * 0.9, 
-          status: compressed ? "Decompressing & Parsing..." : "Parsing..." 
+        self.postMessage({
+          type: "progress",
+          progress: (bytesProcessed / totalBytes) * 0.9,
+          status: compressed ? "Decompressing & Parsing..." : "Parsing...",
         });
       }
     };
@@ -70,7 +71,11 @@ self.onmessage = async (e: MessageEvent<ProcessingRequest>) => {
       parser.parseLine(remainder);
     }
 
-    self.postMessage({ type: "progress", progress: 0.95, status: "Finalizing..." });
+    self.postMessage({
+      type: "progress",
+      progress: 0.95,
+      status: "Finalizing...",
+    });
     const profile = parser.getProfile();
     self.postMessage({ type: "progress", progress: 1.0, status: "Done" });
     self.postMessage({ type: "result", profile });

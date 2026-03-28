@@ -5,9 +5,9 @@ import { parseHeaptrack } from "./utils/parser";
 
 // Mock Worker
 class MockWorker {
-  onmessage: ((ev: { data: any }) => void) | null = null;
+  onmessage: ((ev: { data: Record<string, unknown> }) => void) | null = null;
   onerror: ((ev: ErrorEvent) => void) | null = null;
-  postMessage(message: any) {
+  postMessage(message: { file: File }) {
     if (this.onmessage) {
       // Send progress first
       this.onmessage({
@@ -21,7 +21,12 @@ class MockWorker {
         const text = reader.result as string;
         const profile = parseHeaptrack(text);
         if (this.onmessage) {
-          this.onmessage({ data: { type: "result", profile } });
+          this.onmessage({
+            data: {
+              type: "result",
+              profile: profile as unknown as Record<string, unknown>,
+            },
+          });
         }
       };
       reader.readAsText(file);
@@ -56,9 +61,7 @@ describe("App", () => {
 
     await waitFor(
       () => {
-        expect(
-          screen.getByText(/Profile Info/i),
-        ).toBeInTheDocument();
+        expect(screen.getByText(/Profile Info/i)).toBeInTheDocument();
       },
       { timeout: 3000 },
     );
@@ -79,9 +82,7 @@ describe("App", () => {
 
     await waitFor(
       () => {
-        expect(
-          screen.getByText(/Profile Info/i),
-        ).toBeInTheDocument();
+        expect(screen.getByText(/Profile Info/i)).toBeInTheDocument();
       },
       { timeout: 3000 },
     );

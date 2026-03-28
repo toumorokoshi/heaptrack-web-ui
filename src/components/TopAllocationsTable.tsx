@@ -22,7 +22,7 @@ export const TopAllocationsTable: React.FC<TopAllocationsTableProps> = ({
     return summaries.filter(
       (s) =>
         s.symbolName.toLowerCase().includes(term) ||
-        (s.filePath && s.filePath.toLowerCase().includes(term))
+        (s.filePath && s.filePath.toLowerCase().includes(term)),
     );
   }, [summaries, searchTerm]);
 
@@ -81,7 +81,9 @@ export const TopAllocationsTable: React.FC<TopAllocationsTableProps> = ({
     <div className="top-allocations-container">
       <div className="table-controls">
         <div className="search-box">
-          <svg className="search-icon"><use href="/icons.svg#search-icon"></use></svg>
+          <svg className="search-icon">
+            <use href="/icons.svg#search-icon"></use>
+          </svg>
           <input
             type="text"
             placeholder="Search symbols or files..."
@@ -129,9 +131,7 @@ export const TopAllocationsTable: React.FC<TopAllocationsTableProps> = ({
               <td className="monospace value">
                 {formatBytes(summary.peakAllocation)}
               </td>
-              <td className="monospace value">
-                {formatBytes(summary.leaked)}
-              </td>
+              <td className="monospace value">{formatBytes(summary.leaked)}</td>
             </tr>
           ))}
         </tbody>

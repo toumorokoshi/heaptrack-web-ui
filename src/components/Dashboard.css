@@ -75,8 +75,14 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .profile-details-card {
@@ -195,7 +201,7 @@
   background: rgba(255, 255, 255, 0.05);
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 0.8rem;
 }
 
@@ -237,7 +243,7 @@
   .sidebar nav ul li span {
     display: none; /* Only show icons if space is very tight? No, let's keep labels for now but smaller */
   }
-  
+
   .sidebar nav ul {
     justify-content: space-between;
   }
@@ -245,7 +251,7 @@
   .profile-details-card {
     padding: 1rem;
   }
-  
+
   .profile-details-card p {
     font-size: 0.85rem;
   }

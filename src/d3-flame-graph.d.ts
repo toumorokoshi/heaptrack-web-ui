@@ -1,4 +1,4 @@
-declare module 'd3-flame-graph' {
+declare module "d3-flame-graph" {
   import { Selection, BaseType } from "d3";
 
   export interface FlamegraphChart {
@@ -8,6 +8,9 @@ declare module 'd3-flame-graph' {
     minFrameSize(s: number): FlamegraphChart;
     transitionEase(e: (t: number) => number): FlamegraphChart;
     sort(s: boolean): FlamegraphChart;
+    search(term: string): void;
+    clear(): void;
+    resetZoom(): void;
     (selection: Selection<BaseType, unknown, BaseType | null, unknown>): void;
   }
 

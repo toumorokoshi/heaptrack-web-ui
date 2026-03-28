@@ -10,7 +10,9 @@ a 100
     const profile = parseHeaptrack(data);
     expect(profile.errors).toHaveLength(2);
     expect(profile.errors[0].message).toContain("Invalid trace ID: undefined");
-    expect(profile.errors[1].message).toBe("Allocation (+) without preceding size record (a)");
+    expect(profile.errors[1].message).toBe(
+      "Allocation (+) without preceding size record (a)",
+    );
   });
 
   it("should handle invalid hex values", () => {
@@ -43,7 +45,9 @@ X cmd
     const profile = parseHeaptrack(data);
     expect(profile.allocations).toHaveLength(0);
     expect(profile.errors).toHaveLength(1);
-    expect(profile.errors[0].message).toBe("Allocation (+) without preceding size record (a)");
+    expect(profile.errors[0].message).toBe(
+      "Allocation (+) without preceding size record (a)",
+    );
   });
 
   it("should handle malformed instruction frames", () => {

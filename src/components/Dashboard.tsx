@@ -136,7 +136,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <tr key={i}>
                           <td>{err.line}</td>
                           <td className="error-msg">{err.message}</td>
-                          <td><code>{err.content}</code></td>
+                          <td>
+                            <code>{err.content}</code>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -160,28 +162,36 @@ export const Dashboard: React.FC<DashboardProps> = ({
               className={activeTab === "summary" ? "active" : ""}
               onClick={() => setActiveTab("summary")}
             >
-              <svg className="icon"><use href="/icons.svg#summary-icon"></use></svg>
+              <svg className="icon">
+                <use href="/icons.svg#summary-icon"></use>
+              </svg>
               <span>Summary</span>
             </li>
             <li
               className={activeTab === "flamegraph" ? "active" : ""}
               onClick={() => setActiveTab("flamegraph")}
             >
-              <svg className="icon"><use href="/icons.svg#flamegraph-icon"></use></svg>
+              <svg className="icon">
+                <use href="/icons.svg#flamegraph-icon"></use>
+              </svg>
               <span>Flamegraph</span>
             </li>
             <li
               className={activeTab === "allocations" ? "active" : ""}
               onClick={() => setActiveTab("allocations")}
             >
-              <svg className="icon"><use href="/icons.svg#table-icon"></use></svg>
+              <svg className="icon">
+                <use href="/icons.svg#table-icon"></use>
+              </svg>
               <span>Top Allocations</span>
             </li>
             <li
               className={activeTab === "timeline" ? "active" : ""}
               onClick={() => setActiveTab("timeline")}
             >
-              <svg className="icon"><use href="/icons.svg#chart-icon"></use></svg>
+              <svg className="icon">
+                <use href="/icons.svg#chart-icon"></use>
+              </svg>
               <span>Memory Timeline</span>
             </li>
             {summary.errors > 0 && (
@@ -189,7 +199,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 className={activeTab === "errors" ? "active" : "has-errors"}
                 onClick={() => setActiveTab("errors")}
               >
-                <svg className="icon"><use href="/icons.svg#documentation-icon"></use></svg>
+                <svg className="icon">
+                  <use href="/icons.svg#documentation-icon"></use>
+                </svg>
                 <span>Errors ({summary.errors})</span>
               </li>
             )}
@@ -197,7 +209,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </nav>
         <div className="sidebar-footer">
           <button className="reset-button-small" onClick={onReset}>
-             Close Profile
+            Close Profile
           </button>
         </div>
       </aside>
@@ -205,4 +217,3 @@ export const Dashboard: React.FC<DashboardProps> = ({
     </div>
   );
 };
-

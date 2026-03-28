@@ -88,10 +88,10 @@ export function parseHeaptrack(
   while (end !== -1) {
     const line = data.substring(start, end);
     parser.parseLine(line);
-    
+
     lineCount++;
     if (onProgress && lineCount % 10000 === 0) {
-      onProgress(Math.min(0.99, (end / data.length)));
+      onProgress(Math.min(0.99, end / data.length));
     }
 
     start = end + 1;
@@ -150,7 +150,9 @@ export class HeaptrackParser {
         case "s": {
           const lengthStr = parts[1];
           if (lengthStr !== undefined) {
-            const string = line.substring(parts[0].length + lengthStr.length + 2);
+            const string = line.substring(
+              parts[0].length + lengthStr.length + 2,
+            );
             this.profile.strings.push(string);
           } else {
             throw new Error("Missing string length");
@@ -161,15 +163,21 @@ export class HeaptrackParser {
           const ip = parts[1];
           if (!ip) throw new Error("Missing instruction pointer");
           const moduleId = safeParseInt(parts[2]);
-          if (isNaN(moduleId)) throw new Error(`Invalid module ID: ${parts[2]}`);
+          if (isNaN(moduleId))
+            throw new Error(`Invalid module ID: ${parts[2]}`);
 
           const frames: InstructionFrame[] = [];
           for (let i = 3; i < parts.length; i += 3) {
             const symbolId = safeParseInt(parts[i]);
-            if (isNaN(symbolId)) throw new Error(`Invalid symbol ID: ${parts[i]}`);
-            
-            const fileId = parts[i + 1] ? safeParseInt(parts[i + 1]) : undefined;
-            const lineNum = parts[i + 2] ? safeParseInt(parts[i + 2]) : undefined;
+            if (isNaN(symbolId))
+              throw new Error(`Invalid symbol ID: ${parts[i]}`);
+
+            const fileId = parts[i + 1]
+              ? safeParseInt(parts[i + 1])
+              : undefined;
+            const lineNum = parts[i + 2]
+              ? safeParseInt(parts[i + 2])
+              : undefined;
             frames.push({ symbolId, fileId, line: lineNum });
           }
           this.profile.instructions.push({ ip, moduleId, frames });
@@ -178,9 +186,11 @@ export class HeaptrackParser {
         case "t": {
           const instructionId = safeParseInt(parts[1]);
           const parentTraceId = safeParseInt(parts[2]);
-          if (isNaN(instructionId)) throw new Error(`Invalid instruction ID: ${parts[1]}`);
-          if (isNaN(parentTraceId)) throw new Error(`Invalid parent trace ID: ${parts[2]}`);
-          
+          if (isNaN(instructionId))
+            throw new Error(`Invalid instruction ID: ${parts[1]}`);
+          if (isNaN(parentTraceId))
+            throw new Error(`Invalid parent trace ID: ${parts[2]}`);
+
           this.profile.traces.push({ instructionId, parentTraceId });
           break;
         }
@@ -189,7 +199,7 @@ export class HeaptrackParser {
           const traceId = safeParseInt(parts[2]);
           if (isNaN(size)) throw new Error(`Invalid size: ${parts[1]}`);
           if (isNaN(traceId)) throw new Error(`Invalid trace ID: ${parts[2]}`);
-          
+
           this.lastAlloc = { size, traceId };
           break;
         }
@@ -313,7 +323,8 @@ export function getFlamegraphData(profile: HeaptrackProfile): FlamegraphNode {
     if (!trace) return [];
 
     const instruction =
-      trace.instructionId > 0 && trace.instructionId < profile.instructions.length
+      trace.instructionId > 0 &&
+      trace.instructionId < profile.instructions.length
         ? profile.instructions[trace.instructionId]
         : null;
     if (!instruction) return [];
@@ -432,7 +443,8 @@ export function getAllocationSummaries(
     const trace = profile.traces[traceId];
     if (!trace) continue;
     const instruction =
-      trace.instructionId > 0 && trace.instructionId < profile.instructions.length
+      trace.instructionId > 0 &&
+      trace.instructionId < profile.instructions.length
         ? profile.instructions[trace.instructionId]
         : null;
     if (!instruction) continue;
@@ -459,4 +471,3 @@ export function getAllocationSummaries(
 
   return summaries;
 }
-

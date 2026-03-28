@@ -123,25 +123,48 @@ export const MemoryTimelineChart = ({ data }: Props) => {
     // Add X axis
     g.append("g")
       .attr("transform", `translate(0,${height})`)
-      .call(d3.axisBottom(x).ticks(10).tickFormat((d) => formatTime(d as number)))
+      .call(
+        d3
+          .axisBottom(x)
+          .ticks(10)
+          .tickFormat((d) => formatTime(d as number)),
+      )
       .attr("class", "axis x-axis");
 
     // Add Y axis
     g.append("g")
-      .call(d3.axisLeft(y).ticks(5).tickFormat((d) => formatBytes(d as number)))
+      .call(
+        d3
+          .axisLeft(y)
+          .ticks(5)
+          .tickFormat((d) => formatBytes(d as number)),
+      )
       .attr("class", "axis y-axis");
 
     // Add gridlines
     g.append("g")
       .attr("class", "grid")
-      .call(d3.axisLeft(y).ticks(5).tickSize(-width).tickFormat(() => ""));
+      .call(
+        d3
+          .axisLeft(y)
+          .ticks(5)
+          .tickSize(-width)
+          .tickFormat(() => ""),
+      );
 
     // Add tooltips
-    const tooltip = d3.select(container).append("div").attr("class", "tooltip").style("opacity", 0);
+    const tooltip = d3
+      .select(container)
+      .append("div")
+      .attr("class", "tooltip")
+      .style("opacity", 0);
 
     const focus = g.append("g").attr("class", "focus").style("display", "none");
 
-    focus.append("circle").attr("r", 5).style("fill", "var(--accent-color, #a855f7)");
+    focus
+      .append("circle")
+      .attr("r", 5)
+      .style("fill", "var(--accent-color, #a855f7)");
 
     const bisect = d3.bisector<TimelinePoint, number>((d) => d.timestamp).left;
 
@@ -165,19 +188,25 @@ export const MemoryTimelineChart = ({ data }: Props) => {
         const i = bisect(data, x0, 1);
         const d0 = data[i - 1];
         const d1 = data[i];
-        const d = x0 - d0.timestamp > (d1?.timestamp - x0 || Infinity) ? d1 : d0;
+        const d =
+          x0 - d0.timestamp > (d1?.timestamp - x0 || Infinity) ? d1 : d0;
         if (!d) return;
 
-        focus.attr("transform", `translate(${x(d.timestamp)},${y(d.heapUsage)})`);
-        
+        focus.attr(
+          "transform",
+          `translate(${x(d.timestamp)},${y(d.heapUsage)})`,
+        );
+
         // Coordinates relative to the container (wrapper)
         // mx/my are relative to the overlay rect which starts at margin.left/top
         // We also add the 10px padding from the wrapper CSS
         const tooltipX = mx + margin.left + 10;
         const tooltipY = my + margin.top + 10;
-        
+
         tooltip
-          .html(`Usage: ${formatBytes(d.heapUsage)}<br/>Time: ${formatTime(d.timestamp)}`)
+          .html(
+            `Usage: ${formatBytes(d.heapUsage)}<br/>Time: ${formatTime(d.timestamp)}`,
+          )
           .style("left", `${tooltipX + 15}px`)
           .style("top", `${tooltipY - 20}px`);
       });
@@ -185,7 +214,14 @@ export const MemoryTimelineChart = ({ data }: Props) => {
     return () => {
       tooltip.remove();
     };
-  }, [data, margin.left, margin.right, margin.top, margin.bottom, containerWidth]);
+  }, [
+    data,
+    margin.left,
+    margin.right,
+    margin.top,
+    margin.bottom,
+    containerWidth,
+  ]);
 
   return (
     <div className="timeline-chart-wrapper" ref={containerRef}>

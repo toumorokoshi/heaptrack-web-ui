@@ -2,6 +2,9 @@
 FROM node:25-trixie-slim
 # NOTE: For local development, it is recommended to mount the source code as a volume:
 # docker run -p 5173:5173 -v $(pwd):/app -v /app/node_modules <image-name>
+# needed for gemini cli
+RUN apt update
+RUN apt install -y libsecret-1-0
 
 # Set working directory
 WORKDIR /app

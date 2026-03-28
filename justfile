@@ -19,3 +19,6 @@ build:
 
 install:
     npm install
+
+podman-build:
+    podman build -t heaptrack-web-ui .

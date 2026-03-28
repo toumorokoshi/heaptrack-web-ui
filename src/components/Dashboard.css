@@ -88,6 +88,14 @@
   backdrop-filter: blur(5px);
 }
 
+.profile-details-card code {
+  word-break: break-all;
+  white-space: pre-wrap;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
 .reset-button {
   background: transparent;
   border: 1px solid var(--border-color);
@@ -194,18 +202,51 @@
 @media (max-width: 900px) {
   .dashboard-layout {
     flex-direction: column;
+    gap: 1.5rem;
   }
   .sidebar {
     width: 100%;
     flex-direction: row;
-    padding: 0.75rem;
+    padding: 0.5rem;
+    border-radius: 12px;
+    position: sticky;
+    top: 1rem;
+    z-index: 10;
+  }
+  .sidebar nav {
+    width: 100%;
+    overflow-x: auto;
   }
   .sidebar nav ul {
     flex-direction: row;
     width: 100%;
-    justify-content: space-around;
+    justify-content: flex-start;
+    padding: 0.25rem;
+  }
+  .sidebar nav ul li {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
   }
   .sidebar-footer {
     display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .sidebar nav ul li span {
+    display: none; /* Only show icons if space is very tight? No, let's keep labels for now but smaller */
+  }
+  
+  .sidebar nav ul {
+    justify-content: space-between;
+  }
+
+  .profile-details-card {
+    padding: 1rem;
+  }
+  
+  .profile-details-card p {
+    font-size: 0.85rem;
   }
 }

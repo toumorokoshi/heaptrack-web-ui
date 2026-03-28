@@ -161,28 +161,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
               onClick={() => setActiveTab("summary")}
             >
               <svg className="icon"><use href="/icons.svg#summary-icon"></use></svg>
-              Summary
+              <span>Summary</span>
             </li>
             <li
               className={activeTab === "flamegraph" ? "active" : ""}
               onClick={() => setActiveTab("flamegraph")}
             >
               <svg className="icon"><use href="/icons.svg#flamegraph-icon"></use></svg>
-              Flamegraph
+              <span>Flamegraph</span>
             </li>
             <li
               className={activeTab === "allocations" ? "active" : ""}
               onClick={() => setActiveTab("allocations")}
             >
               <svg className="icon"><use href="/icons.svg#table-icon"></use></svg>
-              Top Allocations
+              <span>Top Allocations</span>
             </li>
             <li
               className={activeTab === "timeline" ? "active" : ""}
               onClick={() => setActiveTab("timeline")}
             >
               <svg className="icon"><use href="/icons.svg#chart-icon"></use></svg>
-              Memory Timeline
+              <span>Memory Timeline</span>
             </li>
             {summary.errors > 0 && (
               <li
@@ -190,7 +190,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 onClick={() => setActiveTab("errors")}
               >
                 <svg className="icon"><use href="/icons.svg#documentation-icon"></use></svg>
-                Errors ({summary.errors})
+                <span>Errors ({summary.errors})</span>
               </li>
             )}
           </ul>

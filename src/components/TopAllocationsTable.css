@@ -73,10 +73,28 @@
   font-weight: 500;
   color: var(--text-primary);
   word-break: break-all;
-  max-width: 500px;
+  max-width: 50vw;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (max-width: 800px) {
+  .symbol-name {
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 500px) {
+  .symbol-name {
+    max-width: 150px;
+    font-size: 0.8rem;
+  }
+  
+  .top-allocations-table th,
+  .top-allocations-table td {
+    padding: 0.75rem 1rem;
+  }
 }
 
 .file-path {

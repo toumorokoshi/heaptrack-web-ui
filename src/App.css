@@ -175,6 +175,7 @@ main {
 .success-banner p {
   margin: 0;
   color: var(--text-secondary);
+  text-align: center;
 }
 
 .success-banner button {
@@ -270,4 +271,46 @@ footer {
     transparent
   );
   margin: 2rem 0;
+}
+
+@media (max-width: 600px) {
+  .app-container {
+    padding: 0 1rem;
+  }
+
+  header {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem 0;
+    text-align: center;
+  }
+
+  .logo-container {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .logo-container h1 {
+    font-size: 1.25rem;
+  }
+
+  .success-banner {
+    padding: 1.5rem;
+    border-radius: 16px;
+  }
+
+  .success-banner h2 {
+    font-size: 1.25rem;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .timeline-section,
+  .flamegraph-section,
+  .top-allocations-section {
+    padding: 1rem;
+  }
 }

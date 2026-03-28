@@ -12,7 +12,12 @@ export const MemoryTimelineChart = ({ data }: Props) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(900);
 
-  const margin = { top: 20, right: 30, bottom: 40, left: 70 };
+  const margin = {
+    top: 20,
+    right: 20,
+    bottom: 40,
+    left: containerWidth < 500 ? 50 : 70,
+  };
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return "0 B";

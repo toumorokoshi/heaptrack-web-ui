@@ -137,6 +137,7 @@ function App() {
             flamegraphData={flamegraphData}
             allocationSummaries={allocationSummaries}
             timelineData={timelineData}
+            errors={profile.errors}
             onReset={() => setProfile(null)}
           />
         )}

@@ -1,3 +1,9 @@
+export interface ParsingError {
+  line: number;
+  content: string;
+  message: string;
+}
+
 export interface HeaptrackProfile {
   version: string;
   command: string;
@@ -5,6 +11,7 @@ export interface HeaptrackProfile {
   instructions: Instruction[];
   traces: Trace[];
   allocations: AllocationEvent[];
+  errors: ParsingError[];
 }
 
 export interface InstructionFrame {
@@ -45,6 +52,7 @@ export interface HeaptrackSummary {
   traces: number;
   allocations: number;
   frees: number;
+  errors: number;
 }
 
 export interface FlamegraphNode {
@@ -63,6 +71,11 @@ export interface AllocationSummary {
   leaked: number;
 }
 
+function safeParseInt(value: string | undefined): number {
+  if (value === undefined) return NaN;
+  return parseInt(value, 16);
+}
+
 export function parseHeaptrack(data: string): HeaptrackProfile {
   const lines = data.split("\n");
   const profile: HeaptrackProfile = {
@@ -72,92 +85,117 @@ export function parseHeaptrack(data: string): HeaptrackProfile {
     instructions: [null as unknown as Instruction], // 1-based indexing
     traces: [null as unknown as Trace], // 1-based indexing
     allocations: [],
+    errors: [],
   };
 
   let lastAlloc: { size: number; traceId: number } | null = null;
   let currentTimestamp = 0;
 
-  for (const line of lines) {
+  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+    const line = lines[lineIdx];
     if (!line) continue;
     const parts = line.split(" ");
     const type = parts[0];
 
-    switch (type) {
-      case "v":
-        profile.version = parts.slice(1).join(" ");
-        break;
-      case "X":
-        profile.command = parts.slice(1).join(" ");
-        break;
-      case "c":
-        // c timestamp
-        currentTimestamp = parseInt(parts[1], 16);
-        break;
-      case "s": {
-        // s length string
-        const lengthStr = parts[1];
-        if (lengthStr !== undefined) {
-          // length is provided in hex but not used for string slicing because substring(indexOf) is safer
-          // const length = parseInt(lengthStr, 16);
-          // Use substring to get the string, it might contain spaces
-          const string = line.substring(parts[0].length + lengthStr.length + 2);
-          profile.strings.push(string);
+    try {
+      switch (type) {
+        case "v":
+          profile.version = parts.slice(1).join(" ");
+          break;
+        case "X":
+          profile.command = parts.slice(1).join(" ");
+          break;
+        case "c": {
+          const timestamp = safeParseInt(parts[1]);
+          if (isNaN(timestamp)) {
+            throw new Error(`Invalid timestamp: ${parts[1]}`);
+          }
+          currentTimestamp = timestamp;
+          break;
         }
-        break;
-      }
-      case "i": {
-        // i IP module_id [symbol_id file_id line]*
-        const ip = parts[1];
-        const moduleId = parseInt(parts[2], 16);
-        const frames: InstructionFrame[] = [];
-        for (let i = 3; i < parts.length; i += 3) {
-          const symbolId = parseInt(parts[i], 16);
-          const fileId = parts[i + 1] ? parseInt(parts[i + 1], 16) : undefined;
-          const lineNum = parts[i + 2] ? parseInt(parts[i + 2], 16) : undefined;
-          frames.push({ symbolId, fileId, line: lineNum });
+        case "s": {
+          const lengthStr = parts[1];
+          if (lengthStr !== undefined) {
+            const string = line.substring(parts[0].length + lengthStr.length + 2);
+            profile.strings.push(string);
+          } else {
+            throw new Error("Missing string length");
+          }
+          break;
         }
-        profile.instructions.push({ ip, moduleId, frames });
-        break;
-      }
-      case "t": {
-        // t instruction_id parent_trace_id
-        const instructionId = parseInt(parts[1], 16);
-        const parentTraceId = parseInt(parts[2], 16);
-        profile.traces.push({ instructionId, parentTraceId });
-        break;
-      }
-      case "a": {
-        // a size trace_id
-        const size = parseInt(parts[1], 16);
-        const traceId = parseInt(parts[2], 16);
-        lastAlloc = { size, traceId };
-        break;
-      }
-      case "+": {
-        // + address
-        const address = parts[1];
-        if (lastAlloc) {
+        case "i": {
+          const ip = parts[1];
+          if (!ip) throw new Error("Missing instruction pointer");
+          const moduleId = safeParseInt(parts[2]);
+          if (isNaN(moduleId)) throw new Error(`Invalid module ID: ${parts[2]}`);
+
+          const frames: InstructionFrame[] = [];
+          for (let i = 3; i < parts.length; i += 3) {
+            const symbolId = safeParseInt(parts[i]);
+            if (isNaN(symbolId)) throw new Error(`Invalid symbol ID: ${parts[i]}`);
+            
+            const fileId = parts[i + 1] ? safeParseInt(parts[i + 1]) : undefined;
+            const lineNum = parts[i + 2] ? safeParseInt(parts[i + 2]) : undefined;
+            frames.push({ symbolId, fileId, line: lineNum });
+          }
+          profile.instructions.push({ ip, moduleId, frames });
+          break;
+        }
+        case "t": {
+          const instructionId = safeParseInt(parts[1]);
+          const parentTraceId = safeParseInt(parts[2]);
+          if (isNaN(instructionId)) throw new Error(`Invalid instruction ID: ${parts[1]}`);
+          if (isNaN(parentTraceId)) throw new Error(`Invalid parent trace ID: ${parts[2]}`);
+          
+          profile.traces.push({ instructionId, parentTraceId });
+          break;
+        }
+        case "a": {
+          const size = safeParseInt(parts[1]);
+          const traceId = safeParseInt(parts[2]);
+          if (isNaN(size)) throw new Error(`Invalid size: ${parts[1]}`);
+          if (isNaN(traceId)) throw new Error(`Invalid trace ID: ${parts[2]}`);
+          
+          lastAlloc = { size, traceId };
+          break;
+        }
+        case "+": {
+          const address = parts[1];
+          if (!address) throw new Error("Missing allocation address");
+          if (lastAlloc) {
+            profile.allocations.push({
+              type: "alloc",
+              address,
+              size: lastAlloc.size,
+              traceId: lastAlloc.traceId,
+              timestamp: currentTimestamp,
+            });
+          } else {
+            profile.errors.push({
+              line: lineIdx + 1,
+              content: line,
+              message: "Allocation (+) without preceding size record (a)",
+            });
+          }
+          break;
+        }
+        case "-": {
+          const address = parts[1];
+          if (!address) throw new Error("Missing free address");
           profile.allocations.push({
-            type: "alloc",
+            type: "free",
             address,
-            size: lastAlloc.size,
-            traceId: lastAlloc.traceId,
             timestamp: currentTimestamp,
           });
-          // Do not null out lastAlloc, as multiple + records can follow one a record
+          break;
         }
-        break;
       }
-      case "-": {
-        // - address
-        const address = parts[1];
-        profile.allocations.push({
-          type: "free",
-          address,
-          timestamp: currentTimestamp,
-        });
-        break;
-      }
+    } catch (err) {
+      profile.errors.push({
+        line: lineIdx + 1,
+        content: line,
+        message: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 
@@ -196,16 +234,16 @@ export function getTimelineData(profile: HeaptrackProfile): TimelinePoint[] {
   return timeline;
 }
 
-// Keep the old summary function for compatibility if needed, or update it
 export function getSummary(profile: HeaptrackProfile): HeaptrackSummary {
   return {
     version: profile.version,
     command: profile.command,
-    symbols: profile.strings.length - 1,
-    instructions: profile.instructions.length - 1,
-    traces: profile.traces.length - 1,
+    symbols: Math.max(0, profile.strings.length - 1),
+    instructions: Math.max(0, profile.instructions.length - 1),
+    traces: Math.max(0, profile.traces.length - 1),
     allocations: profile.allocations.filter((a) => a.type === "alloc").length,
     frees: profile.allocations.filter((a) => a.type === "free").length,
+    errors: profile.errors.length,
   };
 }
 
@@ -227,27 +265,23 @@ export function getFlamegraphData(profile: HeaptrackProfile): FlamegraphNode {
   const root: FlamegraphNode = { name: "all", value: 0, children: [] };
   const traceToNodes = new Map<number, FlamegraphNode[]>();
 
-  // Helper to get symbol name
   const getSymbolName = (symbolId: number) => {
     return profile.strings[symbolId] || `symbol@0x${symbolId.toString(16)}`;
   };
 
-  // Build nodes for each trace
-  // We need to process traces in an order that respects the parent-child relationship
-  // but since we have parentTraceId, we can just build the tree.
-
   const getNodesForTrace = (traceId: number): FlamegraphNode[] => {
-    if (traceId === 0) return [];
+    if (traceId <= 0 || traceId >= profile.traces.length) return [];
     if (traceToNodes.has(traceId)) return traceToNodes.get(traceId)!;
 
     const trace = profile.traces[traceId];
     if (!trace) return [];
 
-    const instruction = profile.instructions[trace.instructionId];
+    const instruction =
+      trace.instructionId > 0 && trace.instructionId < profile.instructions.length
+        ? profile.instructions[trace.instructionId]
+        : null;
     if (!instruction) return [];
 
-    // Instruction frames are inner-to-outer.
-    // In flamegraph, we want outer-to-inner.
     const nodes: FlamegraphNode[] = instruction.frames
       .slice()
       .reverse()
@@ -261,7 +295,6 @@ export function getFlamegraphData(profile: HeaptrackProfile): FlamegraphNode {
     return nodes;
   };
 
-  // Assign allocation values to the innermost node of each trace
   for (const [traceId, size] of traceAllocations.entries()) {
     const nodes = getNodesForTrace(traceId);
     if (nodes.length > 0) {
@@ -269,7 +302,6 @@ export function getFlamegraphData(profile: HeaptrackProfile): FlamegraphNode {
     }
   }
 
-  // Link nodes according to hierarchy
   for (let i = 1; i < profile.traces.length; i++) {
     const trace = profile.traces[i];
     if (!trace) continue;
@@ -277,18 +309,16 @@ export function getFlamegraphData(profile: HeaptrackProfile): FlamegraphNode {
     const nodes = getNodesForTrace(i);
     if (nodes.length === 0) continue;
 
-    // Link inlined frames within the same instruction
     for (let j = 0; j < nodes.length - 1; j++) {
       if (!nodes[j].children.includes(nodes[j + 1])) {
         nodes[j].children.push(nodes[j + 1]);
       }
     }
 
-    // Link the outermost frame of this trace to the innermost frame of the parent trace
     const parentTraceId = trace.parentTraceId;
     let parentNode: FlamegraphNode;
 
-    if (parentTraceId === 0) {
+    if (parentTraceId <= 0) {
       parentNode = root;
     } else {
       const parentNodes = getNodesForTrace(parentTraceId);
@@ -304,7 +334,6 @@ export function getFlamegraphData(profile: HeaptrackProfile): FlamegraphNode {
     }
   }
 
-  // Propagate values up the tree
   const propagate = (node: FlamegraphNode): number => {
     const childrenValue = node.children.reduce(
       (sum, child) => sum + propagate(child),
@@ -357,14 +386,18 @@ export function getAllocationSummaries(
 
   const summaries: AllocationSummary[] = [];
   for (const [traceId, stats] of traceStats.entries()) {
-    if (traceId === 0) continue;
+    if (traceId <= 0 || traceId >= profile.traces.length) continue;
     const trace = profile.traces[traceId];
     if (!trace) continue;
-    const instruction = profile.instructions[trace.instructionId];
+    const instruction =
+      trace.instructionId > 0 && trace.instructionId < profile.instructions.length
+        ? profile.instructions[trace.instructionId]
+        : null;
     if (!instruction) continue;
 
-    // Use the innermost frame for the primary description
     const frame = instruction.frames[0];
+    if (!frame) continue;
+
     const symbolName =
       profile.strings[frame.symbolId] ||
       `symbol@0x${frame.symbolId.toString(16)}`;
@@ -384,3 +417,4 @@ export function getAllocationSummaries(
 
   return summaries;
 }
+

@@ -123,6 +123,74 @@
   border-color: rgba(255, 77, 77, 0.2);
 }
 
+.sidebar nav ul li.has-errors {
+  color: #ff4d4d;
+}
+
+.sidebar nav ul li.has-errors:hover {
+  background: rgba(255, 77, 77, 0.1);
+}
+
+.sidebar nav ul li.has-errors.active {
+  background: rgba(255, 77, 77, 0.1);
+  border-color: rgba(255, 77, 77, 0.2);
+  color: #ff4d4d;
+}
+
+.summary-card.error {
+  border-color: rgba(255, 77, 77, 0.3);
+  background: rgba(255, 77, 77, 0.05);
+}
+
+.summary-card.error h3 {
+  color: #ff4d4d;
+}
+
+.errors-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+}
+
+.errors-list {
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.errors-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.errors-table th {
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 2px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.errors-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.errors-table td.error-msg {
+  color: #ff4d4d;
+  font-weight: 500;
+}
+
+.errors-table code {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+}
+
 @media (max-width: 900px) {
   .dashboard-layout {
     flex-direction: column;

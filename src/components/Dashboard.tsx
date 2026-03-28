@@ -8,15 +8,17 @@ import type {
   FlamegraphNode,
   AllocationSummary,
   TimelinePoint,
+  ParsingError,
 } from "../utils/parser";
 
-type Tab = "summary" | "flamegraph" | "allocations" | "timeline";
+type Tab = "summary" | "flamegraph" | "allocations" | "timeline" | "errors";
 
 interface DashboardProps {
   summary: HeaptrackSummary;
   flamegraphData: FlamegraphNode | null;
   allocationSummaries: AllocationSummary[] | null;
   timelineData: TimelinePoint[] | null;
+  errors?: ParsingError[];
   onReset: () => void;
 }
 
@@ -25,6 +27,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   flamegraphData,
   allocationSummaries,
   timelineData,
+  errors = [],
   onReset,
 }) => {
   const [activeTab, setActiveTab] = useState<Tab>("summary");
@@ -53,6 +56,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <h3>Traces</h3>
                 <div className="value">{summary.traces.toLocaleString()}</div>
               </div>
+              {summary.errors > 0 && (
+                <div className="summary-card error">
+                  <h3>Errors</h3>
+                  <div className="value">{summary.errors.toLocaleString()}</div>
+                </div>
+              )}
             </div>
             <div className="profile-details-card">
               <h3>Profile Info</h3>
@@ -107,6 +116,38 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
         );
+      case "errors":
+        return (
+          <div className="tab-content fade-in">
+            <div className="errors-section">
+              <h3>Parsing Errors</h3>
+              {errors.length > 0 ? (
+                <div className="errors-list">
+                  <table className="errors-table">
+                    <thead>
+                      <tr>
+                        <th>Line</th>
+                        <th>Message</th>
+                        <th>Content</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {errors.map((err, i) => (
+                        <tr key={i}>
+                          <td>{err.line}</td>
+                          <td className="error-msg">{err.message}</td>
+                          <td><code>{err.content}</code></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p>No parsing errors found.</p>
+              )}
+            </div>
+          </div>
+        );
     }
   };
 
@@ -143,6 +184,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <svg className="icon"><use href="/icons.svg#chart-icon"></use></svg>
               Memory Timeline
             </li>
+            {summary.errors > 0 && (
+              <li
+                className={activeTab === "errors" ? "active" : "has-errors"}
+                onClick={() => setActiveTab("errors")}
+              >
+                <svg className="icon"><use href="/icons.svg#documentation-icon"></use></svg>
+                Errors ({summary.errors})
+              </li>
+            )}
           </ul>
         </nav>
         <div className="sidebar-footer">
@@ -155,3 +205,4 @@ export const Dashboard: React.FC<DashboardProps> = ({
     </div>
   );
 };
+

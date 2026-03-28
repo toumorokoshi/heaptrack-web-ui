@@ -23,13 +23,13 @@ export const Flamegraph = ({ data }: Props) => {
         .transitionEase(d3.easeCubic)
         .sort(true);
 
-      d3.select(ref.current).datum(data).call(chart);
+      (d3.select(ref.current).datum(data) as any).call(chart);
 
       // Handle window resize
       const handleResize = () => {
         if (ref.current) {
           chart.width(ref.current.offsetWidth);
-          d3.select(ref.current).datum(data).call(chart);
+          (d3.select(ref.current).datum(data) as any).call(chart);
         }
       };
 

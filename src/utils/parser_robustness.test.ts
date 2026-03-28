@@ -60,7 +60,7 @@ i addr xyz`; // Invalid module ID
 X cmd
 invalid line
 c 100`;
-    const profile = parseHeaptrack(data);
+    parseHeaptrack(data);
     // 'invalid line' is not a recognized type, so it's ignored currently.
     // Let's test a recognized type with invalid data.
     const data2 = `v 1
@@ -114,4 +114,3 @@ a 100 1
     expect(flameData.children).toHaveLength(0);
   });
 });
-

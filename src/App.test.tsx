@@ -15,11 +15,16 @@ class MockWorker {
       });
 
       // Simulation: decode and parse
-      const { data } = message;
-      const text = new TextDecoder().decode(data);
-      const profile = parseHeaptrack(text);
-
-      this.onmessage({ data: { type: "result", profile } });
+      const { file } = message;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = reader.result as string;
+        const profile = parseHeaptrack(text);
+        if (this.onmessage) {
+          this.onmessage({ data: { type: "result", profile } });
+        }
+      };
+      reader.readAsText(file);
     }
   }
   terminate() {}

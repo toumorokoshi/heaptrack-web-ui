@@ -80,51 +80,79 @@ export function parseHeaptrack(
   data: string,
   onProgress?: (progress: number) => void,
 ): HeaptrackProfile {
-  const lines = data.split("\n");
-  const totalLines = lines.length;
-  const profile: HeaptrackProfile = {
-    version: "unknown",
-    command: "unknown",
-    strings: [""], // 1-based indexing for strings
-    instructions: [null as unknown as Instruction], // 1-based indexing
-    traces: [null as unknown as Trace], // 1-based indexing
-    allocations: [],
-    errors: [],
-  };
+  const parser = new HeaptrackParser();
+  let start = 0;
+  let end = data.indexOf("\n");
+  let lineCount = 0;
+  const approxTotalLines = data.length / 50; // heuristic
 
-  let lastAlloc: { size: number; traceId: number } | null = null;
-  let currentTimestamp = 0;
-
-  for (let lineIdx = 0; lineIdx < totalLines; lineIdx++) {
-    const line = lines[lineIdx];
-    if (onProgress && lineIdx % 5000 === 0) {
-      onProgress(lineIdx / totalLines);
+  while (end !== -1) {
+    const line = data.substring(start, end);
+    parser.parseLine(line);
+    
+    lineCount++;
+    if (onProgress && lineCount % 10000 === 0) {
+      onProgress(Math.min(0.99, (end / data.length)));
     }
-    if (!line) continue;
+
+    start = end + 1;
+    end = data.indexOf("\n", start);
+  }
+
+  // Handle last line if it doesn't end with \n
+  if (start < data.length) {
+    parser.parseLine(data.substring(start));
+  }
+
+  if (onProgress) onProgress(1.0);
+  return parser.getProfile();
+}
+
+export class HeaptrackParser {
+  private profile: HeaptrackProfile;
+  private lastAlloc: { size: number; traceId: number } | null = null;
+  private currentTimestamp = 0;
+  private lineIdx = 0;
+
+  constructor() {
+    this.profile = {
+      version: "unknown",
+      command: "unknown",
+      strings: [""], // 1-based indexing for strings
+      instructions: [null as unknown as Instruction], // 1-based indexing
+      traces: [null as unknown as Trace], // 1-based indexing
+      allocations: [],
+      errors: [],
+    };
+  }
+
+  public parseLine(line: string): void {
+    this.lineIdx++;
+    if (!line) return;
     const parts = line.split(" ");
     const type = parts[0];
 
     try {
       switch (type) {
         case "v":
-          profile.version = parts.slice(1).join(" ");
+          this.profile.version = parts.slice(1).join(" ");
           break;
         case "X":
-          profile.command = parts.slice(1).join(" ");
+          this.profile.command = parts.slice(1).join(" ");
           break;
         case "c": {
           const timestamp = safeParseInt(parts[1]);
           if (isNaN(timestamp)) {
             throw new Error(`Invalid timestamp: ${parts[1]}`);
           }
-          currentTimestamp = timestamp;
+          this.currentTimestamp = timestamp;
           break;
         }
         case "s": {
           const lengthStr = parts[1];
           if (lengthStr !== undefined) {
             const string = line.substring(parts[0].length + lengthStr.length + 2);
-            profile.strings.push(string);
+            this.profile.strings.push(string);
           } else {
             throw new Error("Missing string length");
           }
@@ -145,7 +173,7 @@ export function parseHeaptrack(
             const lineNum = parts[i + 2] ? safeParseInt(parts[i + 2]) : undefined;
             frames.push({ symbolId, fileId, line: lineNum });
           }
-          profile.instructions.push({ ip, moduleId, frames });
+          this.profile.instructions.push({ ip, moduleId, frames });
           break;
         }
         case "t": {
@@ -154,7 +182,7 @@ export function parseHeaptrack(
           if (isNaN(instructionId)) throw new Error(`Invalid instruction ID: ${parts[1]}`);
           if (isNaN(parentTraceId)) throw new Error(`Invalid parent trace ID: ${parts[2]}`);
           
-          profile.traces.push({ instructionId, parentTraceId });
+          this.profile.traces.push({ instructionId, parentTraceId });
           break;
         }
         case "a": {
@@ -163,23 +191,23 @@ export function parseHeaptrack(
           if (isNaN(size)) throw new Error(`Invalid size: ${parts[1]}`);
           if (isNaN(traceId)) throw new Error(`Invalid trace ID: ${parts[2]}`);
           
-          lastAlloc = { size, traceId };
+          this.lastAlloc = { size, traceId };
           break;
         }
         case "+": {
           const address = parts[1];
           if (!address) throw new Error("Missing allocation address");
-          if (lastAlloc) {
-            profile.allocations.push({
+          if (this.lastAlloc) {
+            this.profile.allocations.push({
               type: "alloc",
               address,
-              size: lastAlloc.size,
-              traceId: lastAlloc.traceId,
-              timestamp: currentTimestamp,
+              size: this.lastAlloc.size,
+              traceId: this.lastAlloc.traceId,
+              timestamp: this.currentTimestamp,
             });
           } else {
-            profile.errors.push({
-              line: lineIdx + 1,
+            this.profile.errors.push({
+              line: this.lineIdx,
               content: line,
               message: "Allocation (+) without preceding size record (a)",
             });
@@ -189,24 +217,26 @@ export function parseHeaptrack(
         case "-": {
           const address = parts[1];
           if (!address) throw new Error("Missing free address");
-          profile.allocations.push({
+          this.profile.allocations.push({
             type: "free",
             address,
-            timestamp: currentTimestamp,
+            timestamp: this.currentTimestamp,
           });
           break;
         }
       }
     } catch (err) {
-      profile.errors.push({
-        line: lineIdx + 1,
+      this.profile.errors.push({
+        line: this.lineIdx,
         content: line,
         message: err instanceof Error ? err.message : String(err),
       });
     }
   }
 
-  return profile;
+  public getProfile(): HeaptrackProfile {
+    return this.profile;
+  }
 }
 
 export function getTimelineData(profile: HeaptrackProfile): TimelinePoint[] {

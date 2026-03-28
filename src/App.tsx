@@ -47,50 +47,38 @@ function App() {
   const onFileLoaded = useCallback((file: File) => {
     setLoading(true);
     setLoadingProgress(0);
-    setLoadingStatus("Reading file...");
+    setLoadingStatus("Processing file...");
     setError(null);
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const arrayBuffer = e.target?.result as ArrayBuffer;
+    const worker = new Worker(
+      new URL("./workers/processor.worker.ts", import.meta.url),
+      { type: "module" },
+    );
 
-      const worker = new Worker(
-        new URL("./workers/processor.worker.ts", import.meta.url),
-        { type: "module" },
-      );
-
-      worker.onmessage = (event) => {
-        const data = event.data;
-        if (data.type === "progress") {
-          setLoadingProgress(data.progress);
-          setLoadingStatus(data.status);
-        } else if (data.type === "result") {
-          setProfile(data.profile);
-          setLoading(false);
-          worker.terminate();
-        } else if (data.type === "error") {
-          setError(`Processing failed: ${data.message}`);
-          setLoading(false);
-          worker.terminate();
-        }
-      };
-
-      worker.onerror = (err) => {
-        setError(`Worker error: ${err.message}`);
+    worker.onmessage = (event) => {
+      const data = event.data;
+      if (data.type === "progress") {
+        setLoadingProgress(data.progress);
+        setLoadingStatus(data.status);
+      } else if (data.type === "result") {
+        setProfile(data.profile);
         setLoading(false);
         worker.terminate();
-      };
-
-      const compressed = file.name.endsWith(".zst");
-      worker.postMessage({ data: arrayBuffer, compressed }, [arrayBuffer]);
+      } else if (data.type === "error") {
+        setError(`Processing failed: ${data.message}`);
+        setLoading(false);
+        worker.terminate();
+      }
     };
 
-    reader.onerror = () => {
-      setError("Failed to read file");
+    worker.onerror = (err) => {
+      setError(`Worker error: ${err.message}`);
       setLoading(false);
+      worker.terminate();
     };
 
-    reader.readAsArrayBuffer(file);
+    const compressed = file.name.endsWith(".zst");
+    worker.postMessage({ file, compressed });
   }, []);
 
   return (
